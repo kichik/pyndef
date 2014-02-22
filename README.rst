@@ -8,7 +8,9 @@ The **ndef** modules provides methods for creating and parsing messages and reco
 Forum technical specification. Its main purpose is to provide comprehensive verification of raw NDEF messages. It can be
 used to verify messages before writing them to an actual tag.
 
-Available on `PyPI <ttps://pypi.python.org/pypi/ndef/>`_.
+Available on PyPI_.
+
+.. _PyPI: https://pypi.python.org/pypi/ndef/
 
 Usage
 -----
@@ -60,9 +62,13 @@ Create Message
 Alternatives
 ------------
 
-- `nfcpy <http://nfcpy.readthedocs.org/>`_: full implementation of spec including actual communication code
-- `Python NDEF library and tools <http://mulliner.org/nfc/feed/collins_nfcndef_python_stuff.tgz>`_: aimed at security research
-- `pynfc <https://code.google.com/p/pynfc/>`_: pythonic interface for the libnfc library
+- nfcpy_: full implementation of spec including actual communication code
+- `Python NDEF library and tools`_: aimed at security research
+- `pynfc`_: pythonic interface for the libnfc library
+
+.. _nfcpy: http://nfcpy.readthedocs.org/
+.. _Python NDEF library and tools: http://mulliner.org/nfc/feed/collins_nfcndef_python_stuff.tgz
+.. _pynfc: https://code.google.com/p/pynfc/
 
 License
 -------
