@@ -3,3 +3,4 @@ build
 ndef.egg-info
 dist
 *.pyc
+README.html
