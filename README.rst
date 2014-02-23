@@ -12,6 +12,9 @@ Available on PyPI_.
 
 .. _PyPI: https://pypi.python.org/pypi/ndef/
 
+.. image:: https://drone.io/github.com/kichik/pyndef/status.png
+   :target: https://drone.io/github.com/kichik/pyndef/latest
+
 Usage
 -----
 
