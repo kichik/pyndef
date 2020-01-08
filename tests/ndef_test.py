@@ -1,18 +1,30 @@
+import sys
 import unittest
+
+import six
+
 from ndef.ndef import BufferReader, InvalidNdef, NdefMessage, InvalidNdefMessage, InvalidNdefRecord, new_message, \
     TNF_EMPTY, TNF_WELL_KNOWN, RTD_TEXT, BufferWriter, new_smart_poster, _url_ndef_abbrv
+
 
 # TODO chunked
 # TODO long records
 
+def decode_hex(x):
+    if sys.version_info.major == 2:
+        return x.decode('hex')
+    else:
+        return bytes.fromhex(x)
+
+
 class TestNdefClass(unittest.TestCase):
     def test_reader(self):
-        b = BufferReader('0123456789abcdef'.decode('hex'))
+        b = BufferReader(decode_hex('0123456789abcdef'))
 
         self.assertEqual(b.read_8(), 1)
         self.assertEqual(b.read_16(), 0x4523)
         self.assertEqual(b.read_32(), 0xcdab8967)
-        self.assertEqual(b.read(1), 'ef'.decode('hex'))
+        self.assertEqual(b.read(1), decode_hex('ef'))
 
         with self.assertRaises(InvalidNdef):
             b.read_32()
@@ -27,28 +39,28 @@ class TestNdefClass(unittest.TestCase):
         bw.write_8(0x4f)
         bw.write_16(0x1234)
         bw.write_32(0x12345678)
-        bw.write('test')
+        bw.write_str('test')
         b = bw.get()
 
-        self.assertEqual(b, '4f341278563412'.decode('hex') + 'test')
+        self.assertEqual(b, decode_hex('4f341278563412') + six.b('test'))
 
         with self.assertRaises(InvalidNdef):
             bw.write_8(1000)
 
     def _test_valid_ndef(self, data):
-        NdefMessage(data.decode('hex'))
+        NdefMessage(decode_hex(data))
 
     def _test_invalid_ndef(self, data):
         with self.assertRaises(InvalidNdef):
-            NdefMessage(data.decode('hex'))
+            NdefMessage(decode_hex(data))
 
     def _test_invalid_ndef_message(self, data):
         with self.assertRaises(InvalidNdefMessage):
-            NdefMessage(data.decode('hex'))
+            NdefMessage(decode_hex(data))
 
     def _test_invalid_ndef_record(self, data):
         with self.assertRaises(InvalidNdefRecord):
-            NdefMessage(data.decode('hex'))
+            NdefMessage(decode_hex(data))
 
     def test_verification(self):
         # empty message
@@ -135,10 +147,10 @@ class TestNdefClass(unittest.TestCase):
     def _test_valid_ndef_write(self, expected, *records):
         msg = new_message(*records)
         raw = msg.to_buffer()
-        self.assertEqual(expected, raw.encode('hex'))
+        self.assertEqual(decode_hex(expected), raw)
         msg2 = NdefMessage(raw)
         raw2 = msg2.to_buffer()
-        self.assertEqual(expected, raw2.encode('hex'))
+        self.assertEqual(decode_hex(expected), raw2)
 
     def _test_invalid_ndef_write(self, *records):
         with self.assertRaises(InvalidNdef):
@@ -146,30 +158,32 @@ class TestNdefClass(unittest.TestCase):
 
     def test_writing(self):
         # empty record
-        self._test_valid_ndef_write('d00000', (TNF_EMPTY, '', '', ''))
+        self._test_valid_ndef_write('d00000', (TNF_EMPTY, six.b(''), six.b(''), six.b('')))
         # two empty records
-        self._test_valid_ndef_write('900000500000', (TNF_EMPTY, '', '', ''), (TNF_EMPTY, '', '', ''))
+        self._test_valid_ndef_write('900000500000',
+                                    (TNF_EMPTY, six.b(''), six.b(''), six.b('')),
+                                    (TNF_EMPTY, six.b(''), six.b(''), six.b('')))
         # not really empty record
-        self._test_invalid_ndef_write((TNF_EMPTY, 'a', '', ''))
-        self._test_invalid_ndef_write((TNF_EMPTY, '', 'a', ''))
-        self._test_invalid_ndef_write((TNF_EMPTY, '', '', 'a'))
+        self._test_invalid_ndef_write((TNF_EMPTY, six.b('a'), six.b(''), six.b('')))
+        self._test_invalid_ndef_write((TNF_EMPTY, six.b(''), six.b('a'), six.b('')))
+        self._test_invalid_ndef_write((TNF_EMPTY, six.b(''), six.b(''), six.b('a')))
         # invalid inputs
         self._test_invalid_ndef_write((TNF_EMPTY,))
-        self._test_invalid_ndef_write((TNF_EMPTY, '', '', '', ''))
+        self._test_invalid_ndef_write((TNF_EMPTY, six.b(''), six.b(''), six.b(''), six.b('')))
         # non-empty id
         self._test_valid_ndef_write('d90108055468656c6c6f02656e776f726c64',
-                                    (TNF_WELL_KNOWN, RTD_TEXT, 'hello', '\x02enworld'))
+                                    (TNF_WELL_KNOWN, RTD_TEXT, six.b('hello'), six.b('\x02enworld')))
 
     def test_writing_smart_poster(self):
         msg = new_smart_poster('Facebook', 'http://www.facebook.com/')
         raw_msg = msg.to_buffer()
         self.assertEqual(
-            'd10228537091010e550166616365626f6f6b2e636f6d2f1103016163740051010b5402656e46616365626f6f6b',
-            raw_msg.encode('hex'))
+            decode_hex('d10228537091010e550166616365626f6f6b2e636f6d2f1103016163740051010b5402656e46616365626f6f6b'),
+            raw_msg)
 
         new_smart_poster('Facebook' * 400, 'x' * 400)
 
     def test_url_ndef_abbrv(self):
-        self.assertEquals(_url_ndef_abbrv('http://test.com'), '\x03test.com')
-        self.assertEquals(_url_ndef_abbrv('https://test.com'), '\x04test.com')
-        self.assertEquals(_url_ndef_abbrv('myproto://test.com'), '\x00myproto://test.com')
+        self.assertEqual(_url_ndef_abbrv('http://test.com'), six.b('\x03test.com'))
+        self.assertEqual(_url_ndef_abbrv('https://test.com'), six.b('\x04test.com'))
+        self.assertEqual(_url_ndef_abbrv('myproto://test.com'), six.b('\x00myproto://test.com'))

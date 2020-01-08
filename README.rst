@@ -2,9 +2,9 @@
 Python Module for NFC Data Exchange Format (NDEF)
 #################################################
 
-Release v0.1 -- February 22nd, 2014
+Release v0.2 -- January 7th, 2020
 
-The **ndef** modules provides methods for creating and parsing messages and records in the NDEF format according to NFC
+The **ndef** modules provides methods for encoding and decoding messages and records in the NDEF format according to NFC
 Forum technical specification. Its main purpose is to provide comprehensive verification of raw NDEF messages. It can be
 used to verify messages before writing them to an actual tag.
 
@@ -12,8 +12,12 @@ Available on PyPI_.
 
 .. _PyPI: https://pypi.python.org/pypi/ndef/
 
-.. image:: https://drone.io/github.com/kichik/pyndef/status.png
-   :target: https://drone.io/github.com/kichik/pyndef/latest
+.. image:: https://travis-ci.org/kichik/pyndef.svg?branch=master
+   :target: https://travis-ci.org/kichik/pyndef
+
+.. image:: https://badge.fury.io/py/pyndef.svg
+    :target: https://badge.fury.io/py/ndef
+
 
 Usage
 -----

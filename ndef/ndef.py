@@ -2,8 +2,10 @@
 # and http://androidxref.com/source/xref/external/libnfc-nxp/src/phFriNfc_NdefRecord.c
 #   line 87 - phFriNfc_NdefRecord_GetRecords()
 
-import struct
 import functools
+import struct
+
+import six
 
 
 class InvalidNdef(Exception):
@@ -34,9 +36,9 @@ TNF_UNKNOWN = 0x05
 TNF_UNCHANGED = 0x06
 TNF_RESERVED = 0x07
 
-RTD_TEXT = "T"
-RTD_URI = "U"
-RTD_SMART_POSTER = "Sp"
+RTD_TEXT = six.b('T')
+RTD_URI = six.b('U')
+RTD_SMART_POSTER = six.b('Sp')
 
 RTD_URI_ABBRIV_NUM = 35
 
@@ -60,7 +62,7 @@ class BufferReader(object):
             res = struct.unpack_from(SIZE2STRUCT[size], self.buffer, self.offset)
         except struct.error:
             raise InvalidNdef('not enough bytes')
-        self.offset += size / 8
+        self.offset += int(size / 8)
         return res[0]
 
     def read(self, size):
@@ -76,7 +78,7 @@ class BufferReader(object):
 
 class BufferWriter(object):
     def __init__(self):
-        self.buffer = ''
+        self.buffer = six.b('')
 
         for size in SIZE2STRUCT:
             setattr(self, 'write_%d' % size, functools.partial(self._write, size))
@@ -87,7 +89,10 @@ class BufferWriter(object):
         except struct.error:
             raise InvalidNdef('bad number')
 
-    def write(self, data):
+    def write_str(self, data):
+        self.buffer += data.encode('utf-8')
+
+    def write_bytes(self, data):
         self.buffer += data
 
     def get(self):
@@ -178,10 +183,10 @@ class NdefRecord(object):
                     raise InvalidNdefRecord('RTD_TEXT payload missing status byte')
 
                 encoding = 'utf-8'
-                if ord(self.payload[0]) & 0x80:
+                if six.byte2int(self.payload) & 0x80:
                     encoding = 'utf-16'
 
-                language_len = ord(self.payload[0]) & 0x1f
+                language_len = six.byte2int(self.payload) & 0x1f
                 if self.payload_len < 1 + language_len:
                     raise InvalidNdefRecord('RTD_TEXT contains invalid language code length')
 
@@ -199,7 +204,7 @@ class NdefRecord(object):
                 if len(self.payload) == 0:
                     raise InvalidNdefRecord('RTD_URI payload missing status byte')
 
-                if ord(self.payload[0]) > RTD_URI_ABBRIV_NUM:
+                if six.byte2int(self.payload) > RTD_URI_ABBRIV_NUM:
                     raise InvalidNdefRecord('RTD_URI payload starts with an invalid URI identifier code')
 
                 try:
@@ -237,10 +242,10 @@ class NdefRecord(object):
             w.write_32(self.payload_len)
         if self.flags.id:
             w.write_8(self.id_len)
-        w.write(self.type)
+        w.write_bytes(self.type)
         if self.flags.id:
-            w.write(self.id)
-        w.write(self.payload)
+            w.write_bytes(self.id)
+        w.write_bytes(self.payload)
         return w.get()
 
     def _raw_flags(self):
@@ -280,7 +285,7 @@ class NdefMessage(object):
         self._verify_android_specific()
 
     def to_buffer(self):
-        return ''.join(r.to_buffer() for r in self.records)
+        return six.b('').join(r.to_buffer() for r in self.records)
 
     def _verify_records(self):
         for r in self.records:
@@ -381,18 +386,18 @@ def _url_ndef_abbrv(url):
 
     for i, abbr in enumerate(abbrv_table):
         if url.startswith(abbr):
-            return chr(i + 1) + url[len(abbr):].encode('utf-8')
+            return six.int2byte(i + 1) + url[len(abbr):].encode('utf-8')
 
-    return chr(0) + url.encode('utf-8')
+    return six.int2byte(0) + url.encode('utf-8')
 
 
 def new_smart_poster(title, url):
     records = [
-        (TNF_WELL_KNOWN, RTD_URI, '', _url_ndef_abbrv(url)),
-        (TNF_WELL_KNOWN, "act", '', '\x00'),
+        (TNF_WELL_KNOWN, RTD_URI, six.b(''), _url_ndef_abbrv(url)),
+        (TNF_WELL_KNOWN, six.b('act'), six.b(''), six.b('\x00')),
     ]
     if title:
-        records.append((TNF_WELL_KNOWN, RTD_TEXT, '', '\x02en' + title.encode('utf-8')))
+        records.append((TNF_WELL_KNOWN, RTD_TEXT, six.b(''), six.b('\x02en') + title.encode('utf-8')))
     internal_message = new_message(*records)
     raw_internal = internal_message.to_buffer()
-    return new_message((TNF_WELL_KNOWN, RTD_SMART_POSTER, '', raw_internal))
+    return new_message((TNF_WELL_KNOWN, RTD_SMART_POSTER, six.b(''), raw_internal))

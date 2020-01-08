@@ -1,0 +1,20 @@
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "3.7"
+  - "3.8"
+script: python setup.py test
+deploy:
+  provider: pypi
+  distributions: "sdist bdist_wheel"
+  user:
+    secure: "SJVWZLq4w/YkrHfpnatQPVaRIEYsXtwxP1HnLCrCCxd4nRJK4qako8/eg7yyFE/b3Wekyfr78GaQMA7MD08mgm6Y4cMSxy3oImfPSaTfq+z/9s2kbGfQuE+iHVBuVOYMmJLwi3qbvdRv2b6Pn8/gc21lcdmqJ51KPyDhFO6gFVw="
+  password:
+    secure: "Z57c+JgL3aand1m0k6QTeg9EZp2zGji5YWGScPWWM5hWeirK2ofatTdrR3TRC4Um+nnhlfHZlFOtoUThEaGwMinsbA9PX36DDi10bTbD+EBN2kmH0yHsp/7KA+sbifhdimQ7KKXaTx+f4lqpXro1/h5YjgXb5v9tGJ95CVs8g9M="
+  on:
+    repo: kichik/pyndef
+    tags: true
+    python: 3.6
