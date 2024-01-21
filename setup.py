@@ -2,7 +2,11 @@ import os
 
 from setuptools import setup
 
-version = os.getenv('TRAVIS_TAG', '0.0')
+ref = os.getenv('GITHUB_REF', '')
+if ref.startswith('refs/tags/'):
+    version = ref.replace('refs/tags/', '')
+else:
+    version = '0.0'
 
 
 def read(fname):
