@@ -19,5 +19,5 @@ message_data = bytes.fromhex('9901050155610123456761')
 try:
     message = ndef.NdefMessage(message_data)
     assert False, 'this should never happen'
-except ndef.InvalidNdef, e:
-    print('  %s: %s' % (e.__class__.__name__, e.message))
+except ndef.InvalidNdef as e:
+    print('  %s: %s' % (e.__class__.__name__, e))
