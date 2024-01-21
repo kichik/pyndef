@@ -2,7 +2,11 @@ import os
 
 from setuptools import setup
 
-version = os.getenv('GITHUB_REF', 'refs/tags/0.0').replace('refs/tags/', '')
+ref = os.getenv('GITHUB_REF', '')
+if ref.startswith('refs/tags/'):
+    version = ref.replace('refs/tags/', '')
+else:
+    version = '0.0'
 
 
 def read(fname):
