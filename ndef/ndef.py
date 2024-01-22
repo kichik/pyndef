@@ -5,8 +5,6 @@
 import functools
 import struct
 
-import six
-
 
 class InvalidNdef(Exception):
     pass
@@ -36,9 +34,9 @@ TNF_UNKNOWN = 0x05
 TNF_UNCHANGED = 0x06
 TNF_RESERVED = 0x07
 
-RTD_TEXT = six.b('T')
-RTD_URI = six.b('U')
-RTD_SMART_POSTER = six.b('Sp')
+RTD_TEXT = b'T'
+RTD_URI = b'U'
+RTD_SMART_POSTER = b'Sp'
 
 RTD_URI_ABBRIV_NUM = 35
 
@@ -78,7 +76,7 @@ class BufferReader(object):
 
 class BufferWriter(object):
     def __init__(self):
-        self.buffer = six.b('')
+        self.buffer = b''
 
         for size in SIZE2STRUCT:
             setattr(self, 'write_%d' % size, functools.partial(self._write, size))
@@ -183,10 +181,10 @@ class NdefRecord(object):
                     raise InvalidNdefRecord('RTD_TEXT payload missing status byte')
 
                 encoding = 'utf-8'
-                if six.byte2int(self.payload) & 0x80:
+                if self.payload[0] & 0x80:
                     encoding = 'utf-16'
 
-                language_len = six.byte2int(self.payload) & 0x1f
+                language_len = self.payload[0] & 0x1f
                 if self.payload_len < 1 + language_len:
                     raise InvalidNdefRecord('RTD_TEXT contains invalid language code length')
 
@@ -204,7 +202,7 @@ class NdefRecord(object):
                 if len(self.payload) == 0:
                     raise InvalidNdefRecord('RTD_URI payload missing status byte')
 
-                if six.byte2int(self.payload) > RTD_URI_ABBRIV_NUM:
+                if self.payload[0] > RTD_URI_ABBRIV_NUM:
                     raise InvalidNdefRecord('RTD_URI payload starts with an invalid URI identifier code')
 
                 try:
@@ -285,7 +283,7 @@ class NdefMessage(object):
         self._verify_android_specific()
 
     def to_buffer(self):
-        return six.b('').join(r.to_buffer() for r in self.records)
+        return b''.join(r.to_buffer() for r in self.records)
 
     def _verify_records(self):
         for r in self.records:
@@ -386,18 +384,18 @@ def _url_ndef_abbrv(url):
 
     for i, abbr in enumerate(abbrv_table):
         if url.startswith(abbr):
-            return six.int2byte(i + 1) + url[len(abbr):].encode('utf-8')
+            return int.to_bytes(i + 1) + url[len(abbr):].encode('utf-8')
 
-    return six.int2byte(0) + url.encode('utf-8')
+    return int.to_bytes(0) + url.encode('utf-8')
 
 
 def new_smart_poster(title, url):
     records = [
-        (TNF_WELL_KNOWN, RTD_URI, six.b(''), _url_ndef_abbrv(url)),
-        (TNF_WELL_KNOWN, six.b('act'), six.b(''), six.b('\x00')),
+        (TNF_WELL_KNOWN, RTD_URI, b'', _url_ndef_abbrv(url)),
+        (TNF_WELL_KNOWN, b'act', b'', b'\x00'),
     ]
     if title:
-        records.append((TNF_WELL_KNOWN, RTD_TEXT, six.b(''), six.b('\x02en') + title.encode('utf-8')))
+        records.append((TNF_WELL_KNOWN, RTD_TEXT, b'', b'\x02en' + title.encode('utf-8')))
     internal_message = new_message(*records)
     raw_internal = internal_message.to_buffer()
-    return new_message((TNF_WELL_KNOWN, RTD_SMART_POSTER, six.b(''), raw_internal))
+    return new_message((TNF_WELL_KNOWN, RTD_SMART_POSTER, b'', raw_internal))
