@@ -26,23 +26,23 @@ Valid Message
 ~~~~~~~~~~~~~
 
   >>> import ndef
-  >>> message_data = 'D1010F5402656E48656C6C6F20776F726C6421'.decode('hex')
+  >>> message_data = bytes.fromhex('D1010F5402656E48656C6C6F20776F726C6421')
   >>> message = ndef.NdefMessage(message_data)
   >>> record = message.records[0]
   >>> record.tnf
   1
   >>> record.type
-  'T'
+  b'T'
   >>> record.id
   >>> record.payload
-  '\x02enHello world!'
+  b'\x02enHello world!'
   >>>
 
 Invalid Message
 ~~~~~~~~~~~~~~~
 
   >>> import ndef
-  >>> message_data = '9901050155610123456761'.decode('hex')
+  >>> message_data = bytes.fromhex('9901050155610123456761')
   >>> message = ndef.NdefMessage(message_data)
   Traceback (most recent call last):
     File "<stdin>", line 1, in <module>
@@ -59,10 +59,10 @@ Create Message
 ~~~~~~~~~~~~~~
 
   >>> import ndef
-  >>> text_record = (ndef.TNF_WELL_KNOWN, ndef.RTD_TEXT, 'id', 'hello world')
+  >>> text_record = (ndef.TNF_WELL_KNOWN, ndef.RTD_TEXT, b'id', b'hello world')
   >>> text_message = ndef.new_message(text_record)
   >>> text_raw_ndef = text_message.to_buffer()
-  >>> text_raw_ndef.encode('hex')
+  >>> text_raw_ndef.hex()
   'd9010b0254696468656c6c6f20776f726c64'
   >>>
 
