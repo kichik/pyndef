@@ -384,9 +384,9 @@ def _url_ndef_abbrv(url):
 
     for i, abbr in enumerate(abbrv_table):
         if url.startswith(abbr):
-            return int.to_bytes(i + 1) + url[len(abbr):].encode('utf-8')
+            return int.to_bytes(i + 1, 1) + url[len(abbr):].encode('utf-8')
 
-    return int.to_bytes(0) + url.encode('utf-8')
+    return int.to_bytes(0, 1) + url.encode('utf-8')
 
 
 def new_smart_poster(title, url):
