@@ -9,7 +9,7 @@ else:
     version = '0.0'
 
 
-def read(fname):
+def read(fname: str) -> str:
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
@@ -22,6 +22,7 @@ setup(
     author_email='kichik+pyndef@gmail.com',
     url='http://github.com/kichik/pyndef',
     license='zlib/libpng',
+    package_data={'ndef': ['py.typed']},
     packages=['ndef'],
     test_suite='tests',
     zip_safe=True,

@@ -1,9 +1,12 @@
 # based on NFC Data Exchange Format (NDEF) Technical Specification from nfc-forum.org
 # and http://androidxref.com/source/xref/external/libnfc-nxp/src/phFriNfc_NdefRecord.c
 #   line 87 - phFriNfc_NdefRecord_GetRecords()
+from __future__ import annotations
 
+import enum
 import functools
 import struct
+from typing import Callable, Iterable, Collection, Sequence
 
 
 class InvalidNdef(Exception):
@@ -48,74 +51,82 @@ SIZE2STRUCT = {
 
 
 class BufferReader(object):
-    def __init__(self, buffer):
-        self.buffer = buffer
-        self.offset = 0
+    read_8: Callable[[], int]
+    read_16: Callable[[], int]
+    read_32: Callable[[], int]
+
+    def __init__(self, buffer: bytes) -> None:
+        self.buffer: bytes = buffer
+        self.offset: int = 0
 
         for size in SIZE2STRUCT:
             setattr(self, 'read_%d' % size, functools.partial(self._read, size))
 
-    def _read(self, size):
+    def _read(self, size: int) -> int:
         try:
-            res = struct.unpack_from(SIZE2STRUCT[size], self.buffer, self.offset)
+            res: tuple[int,] = struct.unpack_from(SIZE2STRUCT[size], self.buffer, self.offset)  # type: ignore
         except struct.error:
             raise InvalidNdef('not enough bytes')
         self.offset += int(size / 8)
         return res[0]
 
-    def read(self, size):
+    def read(self, size: int) -> bytes:
         if self.offset + size > len(self.buffer):
             raise InvalidNdef('not enough bytes [offset=%u, len=%u, need=%u]' % (self.offset, len(self.buffer), size))
         res = self.buffer[self.offset:self.offset + size]
         self.offset += size
         return res
 
-    def eob(self):
+    def eob(self) -> bool:
         return len(self.buffer) - self.offset == 0
 
 
 class BufferWriter(object):
-    def __init__(self):
-        self.buffer = b''
+    write_8: Callable[[int], None]
+    write_16: Callable[[int], None]
+    write_32: Callable[[int], None]
+
+    def __init__(self) -> None:
+        self.buffer: bytes = b''
 
         for size in SIZE2STRUCT:
             setattr(self, 'write_%d' % size, functools.partial(self._write, size))
 
-    def _write(self, size, data):
+    def _write(self, size: int, data: int) -> None:
         try:
             self.buffer += struct.pack(SIZE2STRUCT[size], data)
         except struct.error:
             raise InvalidNdef('bad number')
 
-    def write_str(self, data):
+    def write_str(self, data: str) -> None:
         self.buffer += data.encode('utf-8')
 
-    def write_bytes(self, data):
+    def write_bytes(self, data: bytes) -> None:
         self.buffer += data
 
-    def get(self):
+    def get(self) -> bytes:
         return self.buffer
 
 
 class NdefRecordFlags(object):
-    def __init__(self):
-        self.message_begin = False
-        self.message_end = False
-        self.chunked = False
-        self.short = False
-        self.id = False
+    def __init__(self) -> None:
+        self.message_begin: bool = False
+        self.message_end: bool = False
+        self.chunked: bool = False
+        self.short: bool = False
+        self.id: bool = False
 
 
 class NdefRecord(object):
-    def __init__(self, reader=None):
-        self.flags = NdefRecordFlags()
-        self.tnf = TNF_EMPTY
-        self.type_len = 0
-        self.type = b''
-        self.id_len = 0
-        self.id = b''
-        self.payload_len = 0
-        self.payload = b''
+    def __init__(self, reader: BufferReader | None = None) -> None:
+        self.flags: NdefRecordFlags = NdefRecordFlags()
+        self.tnf: int = TNF_EMPTY
+        self.type_len: int = 0
+        self.type: bytes = b''
+        self.id_len: int = 0
+        self.id: bytes = b''
+        self.payload_len: int = 0
+        self.payload: bytes = b''
 
         if reader is None:
             return
@@ -157,7 +168,7 @@ class NdefRecord(object):
 
         self.verify()
 
-    def verify(self):
+    def verify(self) -> None:
         if self.tnf == TNF_EMPTY:
             if self.type_len or self.id_len or self.payload_len:
                 raise InvalidNdefRecord("TNF is set to 'empty' but record not empty")
@@ -216,21 +227,21 @@ class NdefRecord(object):
 
                 # TODO verify all other well known types
 
-    def set_type(self, new_type):
+    def set_type(self, new_type: bytes) -> None:
         self.type = new_type
         self.type_len = len(self.type)
 
-    def set_id(self, new_id):
+    def set_id(self, new_id: bytes) -> None:
         self.id = new_id
         self.id_len = len(self.id)
         self.flags.id = self.id_len > 0
 
-    def set_payload(self, new_payload):
+    def set_payload(self, new_payload: bytes) -> None:
         self.payload = new_payload
         self.payload_len = len(self.payload)
         self.flags.short = self.payload_len < 256
 
-    def to_buffer(self):
+    def to_buffer(self) -> bytes:
         w = BufferWriter()
         w.write_8(self._raw_flags() | self.tnf)
         w.write_8(self.type_len)
@@ -246,7 +257,7 @@ class NdefRecord(object):
         w.write_bytes(self.payload)
         return w.get()
 
-    def _raw_flags(self):
+    def _raw_flags(self) -> int:
         raw = 0
         if self.flags.chunked:
             raw |= FLAGS_CHUNKED
@@ -262,7 +273,7 @@ class NdefRecord(object):
 
 
 class NdefMessage(object):
-    def __init__(self, data=None):
+    def __init__(self, data: bytes | None = None):
         self.records = []
 
         if data is None:
@@ -276,20 +287,20 @@ class NdefMessage(object):
 
         self.verify()
 
-    def verify(self):
+    def verify(self) -> None:
         self._verify_records()
         self._verify_begin_end()
         self._verify_chunks()
         self._verify_android_specific()
 
-    def to_buffer(self):
+    def to_buffer(self) -> bytes:
         return b''.join(r.to_buffer() for r in self.records)
 
-    def _verify_records(self):
+    def _verify_records(self) -> None:
         for r in self.records:
             r.verify()
 
-    def _verify_begin_end(self):
+    def _verify_begin_end(self) -> None:
         if not self.records[0].flags.message_begin:
             raise InvalidNdefMessage("first record's MB flag is off")
         for r in self.records[1:]:
@@ -301,7 +312,7 @@ class NdefMessage(object):
             if r.flags.message_end:
                 raise InvalidNdefMessage("ME flag is on for non-last record")
 
-    def _verify_chunks(self):
+    def _verify_chunks(self) -> None:
         chunked = False
         for r in self.records:
             if chunked:
@@ -315,13 +326,13 @@ class NdefMessage(object):
         if self.records[-1].flags.chunked:
             raise InvalidNdefMessage("last record still chunked")
 
-    def _verify_android_specific(self):
+    def _verify_android_specific(self) -> None:
         if self.records[0].tnf != TNF_UNKNOWN and self.records[0].tnf != TNF_EMPTY:
             if not self.records[0].type_len:
                 raise InvalidNdefMessage("first record has no type, but is also not empty or unknown")
 
 
-def new_message(*record_defs):
+def new_message(*record_defs: Sequence) -> NdefMessage:
     records = []
     for record_def in record_defs:
         if len(record_def) != 4:
@@ -343,7 +354,7 @@ def new_message(*record_defs):
     return message
 
 
-def _url_ndef_abbrv(url):
+def _url_ndef_abbrv(url: str) -> bytes:
     abbrv_table = """http://www.
     https://www.
     http://
@@ -389,7 +400,7 @@ def _url_ndef_abbrv(url):
     return int.to_bytes(0, 1, 'little') + url.encode('utf-8')
 
 
-def new_smart_poster(title, url):
+def new_smart_poster(title: str, url: str) -> NdefMessage:
     records = [
         (TNF_WELL_KNOWN, RTD_URI, b'', _url_ndef_abbrv(url)),
         (TNF_WELL_KNOWN, b'act', b'', b'\x00'),
