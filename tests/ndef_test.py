@@ -4,7 +4,7 @@ import unittest
 import six
 
 from ndef.ndef import BufferReader, InvalidNdef, NdefMessage, InvalidNdefMessage, InvalidNdefRecord, new_message, \
-    TNF_EMPTY, TNF_WELL_KNOWN, RTD_TEXT, BufferWriter, new_smart_poster, _url_ndef_abbrv
+    TNF_EMPTY, TNF_WELL_KNOWN, RTD_TEXT, BufferWriter, new_smart_poster, _url_ndef_abbrv, NdefRecord, RTD_URI
 
 
 # TODO chunked
@@ -184,3 +184,40 @@ class TestNdefClass(unittest.TestCase):
         self.assertEqual(_url_ndef_abbrv('http://test.com'), six.b('\x03test.com'))
         self.assertEqual(_url_ndef_abbrv('https://test.com'), six.b('\x04test.com'))
         self.assertEqual(_url_ndef_abbrv('myproto://test.com'), six.b('\x00myproto://test.com'))
+
+    @unittest.expectedFailure
+    def test_invalid_verify_rtd_text(self) -> None:
+        ndefrecord = NdefRecord()
+        ndefrecord.tnf = TNF_WELL_KNOWN
+        ndefrecord.type = RTD_TEXT
+
+        ndefrecord.verify()
+
+    @unittest.expectedFailure
+    def test_invalid_verify(self) -> None:
+        ndefrecord = NdefRecord()
+        ndefrecord.tnf = TNF_WELL_KNOWN
+        ndefrecord.type = RTD_URI
+
+        ndefrecord.verify()
+
+    @unittest.expectedFailure
+    def test_invalid_to_buffer_no_type(self) -> None:
+        ndefrecord = NdefRecord()
+
+        ndefrecord.to_buffer()
+
+    @unittest.expectedFailure
+    def test_invalid_to_buffer_no_id(self) -> None:
+        ndefrecord = NdefRecord()
+        ndefrecord.type = b''
+        ndefrecord.flags.id = True
+
+        ndefrecord.to_buffer()
+
+    @unittest.expectedFailure
+    def test_invalid_to_buffer_no_payload(self) -> None:
+        ndefrecord = NdefRecord()
+        ndefrecord.type = b''
+
+        ndefrecord.to_buffer()
