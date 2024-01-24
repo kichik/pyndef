@@ -111,11 +111,11 @@ class NdefRecord(object):
         self.flags = NdefRecordFlags()
         self.tnf = TNF_EMPTY
         self.type_len = 0
-        self.type = None
+        self.type = b''
         self.id_len = 0
-        self.id = None
+        self.id = b''
         self.payload_len = 0
-        self.payload = None
+        self.payload = b''
 
         if reader is None:
             return
@@ -151,7 +151,7 @@ class NdefRecord(object):
         if self.flags.id:
             self.id = reader.read(self.id_len)
         else:
-            self.id = None
+            self.id = b''
 
         self.payload = reader.read(self.payload_len)
 

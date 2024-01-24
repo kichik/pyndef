@@ -201,13 +201,11 @@ class TestNdefClass(unittest.TestCase):
 
         ndefrecord.verify()
 
-    @unittest.expectedFailure
     def test_invalid_to_buffer_no_type(self) -> None:
         ndefrecord = NdefRecord()
 
         ndefrecord.to_buffer()
 
-    @unittest.expectedFailure
     def test_invalid_to_buffer_no_id(self) -> None:
         ndefrecord = NdefRecord()
         ndefrecord.type = b''
@@ -215,7 +213,6 @@ class TestNdefClass(unittest.TestCase):
 
         ndefrecord.to_buffer()
 
-    @unittest.expectedFailure
     def test_invalid_to_buffer_no_payload(self) -> None:
         ndefrecord = NdefRecord()
         ndefrecord.type = b''
