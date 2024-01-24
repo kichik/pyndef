@@ -10,11 +10,8 @@ from ndef.ndef import BufferReader, InvalidNdef, NdefMessage, InvalidNdefMessage
 # TODO chunked
 # TODO long records
 
-def decode_hex(x):
-    if sys.version_info.major == 2:
-        return x.decode('hex')
-    else:
-        return bytes.fromhex(x)
+def decode_hex(x: str) -> bytes:
+    return bytes.fromhex(x)
 
 
 class TestNdefClass(unittest.TestCase):
